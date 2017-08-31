@@ -329,4 +329,10 @@ or echo strings not converted to uppercase
 string upper -q ABC DEF
 and echo uppercasing a uppercase string did not fail as expected
 
+logmsg 'string strip a*b abbcde'
+string strip "a*b" abbcde
+# or echo string strip exit 1
+# test $x[1] = 'cde'
+# or echo string not stripped correctly
+
 exit 0

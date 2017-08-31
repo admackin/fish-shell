@@ -422,3 +422,8 @@ bxy
 xy
 aabxyx
 xyx
+
+
+#######################
+# string strip "a*b" abbcde
+cde

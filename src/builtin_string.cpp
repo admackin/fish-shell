@@ -118,6 +118,7 @@ typedef struct {  //!OCLINT(too many fields)
     bool right_valid = false;
     bool start_valid = false;
     bool style_valid = false;
+    bool prefix_valid = false;
 
     bool all = false;
     bool entire = false;
@@ -131,6 +132,7 @@ typedef struct {  //!OCLINT(too many fields)
     bool quiet = false;
     bool regex = false;
     bool right = false;
+    bool prefix = false;
 
     long count = 0;
     long length = 0;
@@ -362,6 +364,7 @@ static wcstring construct_short_opts(options_t *opts) {  //!OCLINT(high npath co
     if (opts->regex_valid) short_opts.append(L"r");
     if (opts->right_valid) short_opts.append(L"r");
     if (opts->start_valid) short_opts.append(L"s:");
+    if (opts->prefix_valid) short_opts.append(L"p");
     return short_opts;
 }
 
@@ -385,6 +388,7 @@ static const struct woption long_options[] = {{L"all", no_argument, NULL, 'a'},
                                               {L"right", no_argument, NULL, 'r'},
                                               {L"start", required_argument, NULL, 's'},
                                               {L"style", required_argument, NULL, 1},
+                                              {L"prefix", no_argument, NULL, 'p'},
                                               {NULL, 0, NULL, 0}};
 
 static std::unordered_map<char, decltype(*handle_flag_N)> flag_to_function = {
@@ -1332,6 +1336,30 @@ static int string_upper(parser_t &parser, io_streams_t &streams, int argc, wchar
     return n_transformed > 0 ? STATUS_CMD_OK : STATUS_CMD_ERROR;
 }
 
+/// Implementation of `string strip`.
+static int string_strip(parser_t &parser, io_streams_t &streams, int argc, wchar_t **argv) {
+    options_t opts;
+    opts.regex_valid = true;
+    int optind;
+    int retval = parse_opts(&opts, &optind, 1, argc, argv, parser, streams);
+    if (retval != STATUS_CMD_OK) return retval;
+
+    wcstring storage;
+    const wchar_t *arg;
+    int nstripped = 0;
+    const wchar_t *strippable = opts.arg1; // string to be stripped
+    while ((arg = string_get_arg(&optind, argv, &storage, streams)) != 0) {
+        const size_t pref_match_len = wildcard_prefix_match_length(arg, strippable);
+        if (pref_match_len > 0)
+            nstripped++;
+        streams.out.append(arg + pref_match_len);
+        streams.out.append(L'\n');
+    }
+    
+    return nstripped > 0 ? STATUS_CMD_OK : STATUS_CMD_ERROR;
+}
+
+
 static const struct string_subcommand {
     const wchar_t *name;
     int (*handler)(parser_t &, io_streams_t &, int argc,  //!OCLINT(unused param)
@@ -1345,6 +1373,7 @@ string_subcommands[] = {{L"escape", &string_escape},
                         {L"replace", &string_replace},
                         {L"split", &string_split},
                         {L"sub", &string_sub},
+                        {L"strip", &string_strip},
                         {L"trim", &string_trim},
                         {L"lower", &string_lower},
                         {L"upper", &string_upper},

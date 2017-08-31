@@ -65,4 +65,7 @@ bool wildcard_complete(const wcstring &str, const wchar_t *wc, const wchar_t *de
                        wcstring (*desc_func)(const wcstring &), std::vector<completion_t> *out,
                        expand_flags_t expand_flags, complete_flags_t flags);
 
+size_t wildcard_prefix_match_length(const wchar_t *str, const wchar_t *wc);
+
+
 #endif

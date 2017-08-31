@@ -143,6 +143,33 @@ static enum fuzzy_match_type_t wildcard_match_internal(const wchar_t *str, const
     return fuzzy_match_none;
 }
 
+
+/// Count how many chars match at the start of the string
+///
+/// \param str String to be matched.
+/// \param wc The wildcard.
+size_t wildcard_prefix_match_length(const wchar_t *str, const wchar_t *wc) {
+    if (*str == 0 && *wc == 0) {
+        return 0;  // we're done
+    }
+    
+    if (*wc == ANY_STRING || *wc == ANY_STRING_RECURSIVE) {
+        // Common case of * at the end. In that case we can early out since we know it will match.
+        if (wc[1] == L'\0') {
+            return wcslen(str);
+        }
+        return 1 + wildcard_prefix_match_length(str + 1, wc);
+    } else if (*str == 0) {
+        // End of string, but not end of wildcard, and the next wildcard element is not a '*', so
+        // this is not a match.
+        return 0;
+    } else if (*wc == ANY_CHAR || *wc == *str) {
+        return 1 + wildcard_prefix_match_length(str + 1, wc + 1);
+    }
+    
+    return fuzzy_match_none;
+}
+
 // This does something horrible refactored from an even more horrible function.
 static wcstring resolve_description(wcstring *completion, const wchar_t *explicit_desc,
                                     wcstring (*desc_func)(const wcstring &)) {
